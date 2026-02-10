@@ -1,0 +1,27 @@
+{
+  "name": "@bantu-ai/openclaw-turath",
+  "version": "1.0.0",
+  "description": "OpenClaw plugin for Islamic classical text research via Turath.io",
+  "type": "module",
+  "main": "index.ts",
+  "files": [
+    "index.ts",
+    "src/",
+    "skills/",
+    "data/turath_metadata.db",
+    "openclaw.plugin.json"
+  ],
+  "openclaw": {
+    "extensions": ["./index.ts"]
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "typescript": "^5.5.0"
+  },
+  "peerDependencies": {
+    "openclaw": "*"
+  }
+}

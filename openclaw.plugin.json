@@ -1,0 +1,22 @@
+{
+  "id": "turath",
+  "name": "Turath Islamic Research",
+  "description": "Search and retrieve 100,000+ Islamic classical texts from Turath.io with local metadata enrichment",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "dbPath": {
+        "type": "string",
+        "description": "Custom path to turath_metadata.db (default: bundled)"
+      }
+    }
+  },
+  "uiHints": {
+    "dbPath": {
+      "label": "Database Path",
+      "placeholder": "Leave empty for bundled DB"
+    }
+  },
+  "skills": ["skills"]
+}
