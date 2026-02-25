@@ -1,83 +1,102 @@
+import { request } from "undici";
+import type {
+  QueryParameters,
+  PageMetadata,
+  BookFileApiResponse,
+} from "./types.js";
+
 const API_BASE = "https://api.turath.io";
 const FILES_BASE = "https://files.turath.io/books";
 const API_VER = 3;
 
-const HEADERS: Record<string, string> = {
-  "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-  Accept: "application/json",
-  Referer: "https://turath.io/",
-  Origin: "https://turath.io",
-};
+// ── Error Handling (ADT: all fields required, instanceof narrowing) ──
 
-export class TurathError extends Error {
-  status?: number;
-  url?: string;
+export class HttpError extends Error {
+  readonly status: number;
+  readonly statusText: string;
+  readonly url: string;
 
-  constructor(message: string, status?: number, url?: string) {
-    super(message);
-    this.name = "TurathError";
+  constructor(status: number, statusText: string, url: string) {
+    super(`Request to ${url} failed with status ${status}`);
+    this.name = "HttpError";
     this.status = status;
+    this.statusText = statusText;
     this.url = url;
   }
 }
 
-export interface PageMetadata {
-  author_name?: string;
-  book_name?: string;
-  headings?: string[];
-  page?: number;
-  page_id?: number;
-  vol?: string;
+// ── Query Parameter Helpers ────────────────────────────────────────
+
+function appendQueryParameters(url: URL, params: QueryParameters): void {
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null) continue;
+    url.searchParams.set(key, String(value));
+  }
 }
 
-export async function fetchApi(
+// ── Fetch Functions ────────────────────────────────────────────────
+
+export async function fetchApi<T = unknown>(
   path: string,
-  params?: Record<string, string | number>,
-): Promise<any> {
+  params?: QueryParameters,
+): Promise<T> {
   const url = new URL(`${API_BASE}${path}`);
   url.searchParams.set("ver", String(API_VER));
   if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      url.searchParams.set(key, String(value));
-    }
+    appendQueryParameters(url, params);
   }
 
-  const response = await fetch(url.toString(), { headers: HEADERS });
+  const { statusCode, body } = await request(url.toString(), {
+    headers: { accept: "application/json" },
+  });
 
-  if (!response.ok) {
-    throw new TurathError(
-      `Request failed: ${response.status}`,
-      response.status,
-      url.toString(),
-    );
+  if (statusCode < 200 || statusCode >= 300) {
+    throw new HttpError(statusCode, `HTTP ${statusCode}`, url.toString());
   }
 
-  return response.json();
+  return (await body.json()) as T;
 }
 
-export async function fetchFile(path: string): Promise<any> {
+export async function fetchFile<T = unknown>(path: string): Promise<T> {
   const url = `${FILES_BASE}${path}`;
-  const response = await fetch(url, { headers: HEADERS });
 
-  if (!response.ok) {
-    throw new TurathError(
-      `Request failed: ${response.status}`,
-      response.status,
-      url,
-    );
+  const { statusCode, body } = await request(url, {
+    headers: { accept: "application/json" },
+  });
+
+  if (statusCode < 200 || statusCode >= 300) {
+    throw new HttpError(statusCode, `HTTP ${statusCode}`, url);
   }
 
-  return response.json();
+  return (await body.json()) as T;
 }
+
+export async function fetchBookFile(id: number): Promise<BookFileApiResponse> {
+  try {
+    return await fetchFile<BookFileApiResponse>(`/${id}.json`);
+  } catch (error: unknown) {
+    if (error instanceof HttpError && error.status === 404) {
+      throw new Error(`Book ${id} not found`);
+    }
+    throw error;
+  }
+}
+
+// ── Metadata Parser ────────────────────────────────────────────────
 
 export function parseMeta(metaStr?: string | null): PageMetadata {
-  if (!metaStr) return {};
+  if (!metaStr) return { headings: [] };
   try {
     const parsed = JSON.parse(metaStr);
-    if (!parsed.headings) parsed.headings = [];
-    return parsed;
+    return {
+      author_name: parsed.author_name,
+      book_name: parsed.book_name,
+      headings: Array.isArray(parsed.headings) ? parsed.headings : [],
+      page: parsed.page,
+      page_id: parsed.page_id,
+      vol: parsed.vol,
+    };
   } catch {
-    return {};
+    return { headings: [] };
   }
 }

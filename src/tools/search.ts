@@ -1,4 +1,6 @@
 import type Database from "better-sqlite3";
+import type { SearchApiResponse } from "../types.js";
+import { SortField } from "../types.js";
 import { fetchApi, parseMeta } from "../turath-api.js";
 import { enrichSearchResult } from "../turath-db.js";
 
@@ -33,7 +35,7 @@ export function registerSearchTools(api: any, db: Database.Database): void {
         },
         sort_field: {
           type: "string",
-          enum: ["page_id", "death", "default"],
+          enum: [SortField.PageId, SortField.Death, "default"],
           description: "Sort results by field",
         },
       },
@@ -46,21 +48,24 @@ export function registerSearchTools(api: any, db: Database.Database): void {
       page?: number;
       sort_field?: string;
     }) {
-      const apiParams: Record<string, string | number> = { q: params.query };
-
-      if (params.author != null) apiParams.author = params.author;
-      if (params.category != null) apiParams.cat_id = params.category;
-      if (params.page != null) apiParams.page = params.page;
-      if (params.precision != null) apiParams.precision = params.precision;
-      if (params.sort_field && params.sort_field !== "default") {
-        apiParams.sort = params.sort_field;
-      }
-
-      const result = await fetchApi("/search", apiParams);
+      const result = await fetchApi<SearchApiResponse>("/search", {
+        q: params.query,
+        author: params.author,
+        cat_id: params.category,
+        page: params.page,
+        precision: params.precision,
+        sort:
+          params.sort_field && params.sort_field !== "default"
+            ? params.sort_field
+            : undefined,
+      });
 
       const enrichedData = [];
       for (const item of result.data || []) {
-        const enriched = { ...item, meta: parseMeta(item.meta) };
+        const enriched: Record<string, any> = {
+          ...item,
+          meta: parseMeta(item.meta),
+        };
         enrichSearchResult(db, enriched);
         enrichedData.push(enriched);
       }

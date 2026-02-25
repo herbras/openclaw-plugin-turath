@@ -25,7 +25,7 @@ const plugin = {
     registerAuthorTools(api, db);
     registerFilterTools(api, db);
 
-    api.logger.info("[turath] 7 Islamic research tools registered");
+    api.logger.info("[turath] 8 Islamic research tools registered");
   },
 };
 

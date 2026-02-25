@@ -12,14 +12,21 @@
     "openclaw.plugin.json"
   ],
   "openclaw": {
-    "extensions": ["./index.ts"]
+    "extensions": [
+      "./index.ts"
+    ]
   },
   "dependencies": {
-    "better-sqlite3": "^11.0.0"
+    "better-sqlite3": "^11.0.0",
+    "undici": "^7.22.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^4.0.18"
+  },
+  "scripts": {
+    "test": "vitest run"
   },
   "peerDependencies": {
     "openclaw": "*"

@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
-import { fetchApi, parseMeta, TurathError } from "../turath-api.js";
+import type { BookApiResponse, PageApiResponse } from "../types.js";
+import { fetchApi, fetchBookFile, parseMeta } from "../turath-api.js";
 import { enrichBookInfo } from "../turath-db.js";
 
 export function registerBookTools(api: any, db: Database.Database): void {
@@ -23,12 +24,14 @@ export function registerBookTools(api: any, db: Database.Database): void {
       },
     },
     async execute(params: { book_id: number; include?: string }) {
-      const apiParams: Record<string, string | number> = {
-        id: params.book_id,
-        include: params.include || "indexes",
-      };
+      const result: Record<string, any> = await fetchApi<BookApiResponse>(
+        "/book",
+        {
+          id: params.book_id,
+          include: params.include || "indexes",
+        },
+      );
 
-      const result = await fetchApi("/book", apiParams);
       enrichBookInfo(db, params.book_id, result);
       return result;
     },
@@ -53,20 +56,37 @@ export function registerBookTools(api: any, db: Database.Database): void {
       },
     },
     async execute(params: { book_id: number; page_number: number }) {
-      const apiParams: Record<string, string | number> = {
+      const result = await fetchApi<PageApiResponse>("/page", {
         book_id: params.book_id,
         pg: params.page_number,
-      };
-
-      const result = await fetchApi("/page", apiParams);
+      });
 
       if (!result.meta && !result.text) {
-        throw new TurathError(
+        throw new Error(
           `Book ${params.book_id}, page ${params.page_number} not found`,
         );
       }
 
       return { meta: parseMeta(result.meta), text: result.text || "" };
+    },
+  });
+
+  api.registerTool({
+    name: "turath_get_book_file",
+    description:
+      "Download the full JSON file of a book from Turath.io CDN. Returns complete book content including all pages, indexes, and metadata. Use this when you need the entire book text rather than individual pages.",
+    parameters: {
+      type: "object",
+      required: ["book_id"],
+      properties: {
+        book_id: {
+          type: "number",
+          description: "The book ID from Turath.io",
+        },
+      },
+    },
+    async execute(params: { book_id: number }) {
+      return fetchBookFile(params.book_id);
     },
   });
 }
