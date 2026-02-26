@@ -3,6 +3,41 @@ import type { BookApiResponse, PageApiResponse } from "../types.js";
 import { fetchApi, fetchBookFile, parseMeta } from "../turath-api.js";
 import { enrichBookInfo } from "../turath-db.js";
 
+export async function executeGetBook(
+  db: Database.Database,
+  params: { book_id: number; include?: string },
+) {
+  const result: Record<string, any> = await fetchApi<BookApiResponse>("/book", {
+    id: params.book_id,
+    include: params.include || "indexes",
+  });
+
+  enrichBookInfo(db, params.book_id, result);
+  return result;
+}
+
+export async function executeGetPage(params: {
+  book_id: number;
+  page_number: number;
+}) {
+  const result = await fetchApi<PageApiResponse>("/page", {
+    book_id: params.book_id,
+    pg: params.page_number,
+  });
+
+  if (!result.meta && !result.text) {
+    throw new Error(
+      `Book ${params.book_id}, page ${params.page_number} not found`,
+    );
+  }
+
+  return { meta: parseMeta(result.meta), text: result.text || "" };
+}
+
+export async function executeGetBookFile(params: { book_id: number }) {
+  return fetchBookFile(params.book_id);
+}
+
 export function registerBookTools(api: any, db: Database.Database): void {
   api.registerTool({
     name: "turath_get_book",
@@ -23,18 +58,8 @@ export function registerBookTools(api: any, db: Database.Database): void {
         },
       },
     },
-    async execute(params: { book_id: number; include?: string }) {
-      const result: Record<string, any> = await fetchApi<BookApiResponse>(
-        "/book",
-        {
-          id: params.book_id,
-          include: params.include || "indexes",
-        },
-      );
-
-      enrichBookInfo(db, params.book_id, result);
-      return result;
-    },
+    execute: (params: { book_id: number; include?: string }) =>
+      executeGetBook(db, params),
   });
 
   api.registerTool({
@@ -55,20 +80,8 @@ export function registerBookTools(api: any, db: Database.Database): void {
         },
       },
     },
-    async execute(params: { book_id: number; page_number: number }) {
-      const result = await fetchApi<PageApiResponse>("/page", {
-        book_id: params.book_id,
-        pg: params.page_number,
-      });
-
-      if (!result.meta && !result.text) {
-        throw new Error(
-          `Book ${params.book_id}, page ${params.page_number} not found`,
-        );
-      }
-
-      return { meta: parseMeta(result.meta), text: result.text || "" };
-    },
+    execute: (params: { book_id: number; page_number: number }) =>
+      executeGetPage(params),
   });
 
   api.registerTool({
@@ -85,8 +98,6 @@ export function registerBookTools(api: any, db: Database.Database): void {
         },
       },
     },
-    async execute(params: { book_id: number }) {
-      return fetchBookFile(params.book_id);
-    },
+    execute: (params: { book_id: number }) => executeGetBookFile(params),
   });
 }

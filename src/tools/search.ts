@@ -4,6 +4,41 @@ import { SortField } from "../types.js";
 import { fetchApi, parseMeta } from "../turath-api.js";
 import { enrichSearchResult } from "../turath-db.js";
 
+export type SearchParams = {
+  query: string;
+  precision?: number;
+  category?: number;
+  author?: number;
+  page?: number;
+  sort_field?: string;
+};
+
+export async function executeSearch(db: Database.Database, params: SearchParams) {
+  const result = await fetchApi<SearchApiResponse>("/search", {
+    q: params.query,
+    author: params.author,
+    cat_id: params.category,
+    page: params.page,
+    precision: params.precision,
+    sort:
+      params.sort_field && params.sort_field !== "default"
+        ? params.sort_field
+        : undefined,
+  });
+
+  const enrichedData = [];
+  for (const item of result.data || []) {
+    const enriched: Record<string, any> = {
+      ...item,
+      meta: parseMeta(item.meta),
+    };
+    enrichSearchResult(db, enriched);
+    enrichedData.push(enriched);
+  }
+
+  return { count: result.count || 0, data: enrichedData };
+}
+
 export function registerSearchTools(api: any, db: Database.Database): void {
   api.registerTool({
     name: "turath_search",
@@ -40,37 +75,6 @@ export function registerSearchTools(api: any, db: Database.Database): void {
         },
       },
     },
-    async execute(params: {
-      query: string;
-      precision?: number;
-      category?: number;
-      author?: number;
-      page?: number;
-      sort_field?: string;
-    }) {
-      const result = await fetchApi<SearchApiResponse>("/search", {
-        q: params.query,
-        author: params.author,
-        cat_id: params.category,
-        page: params.page,
-        precision: params.precision,
-        sort:
-          params.sort_field && params.sort_field !== "default"
-            ? params.sort_field
-            : undefined,
-      });
-
-      const enrichedData = [];
-      for (const item of result.data || []) {
-        const enriched: Record<string, any> = {
-          ...item,
-          meta: parseMeta(item.meta),
-        };
-        enrichSearchResult(db, enriched);
-        enrichedData.push(enriched);
-      }
-
-      return { count: result.count || 0, data: enrichedData };
-    },
+    execute: (params: SearchParams) => executeSearch(db, params),
   });
 }

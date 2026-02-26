@@ -6,6 +6,7 @@ dist/
 
 # Compiled binaries
 turath
-turath-linux
-turath-macos
-turath.exe
+turath-linux-x64
+turath-macos-x64
+turath-macos-arm64
+turath-windows-x64.exe
