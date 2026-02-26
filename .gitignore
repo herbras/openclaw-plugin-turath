@@ -3,3 +3,9 @@ dist/
 *.db.bak
 *.log
 .DS_Store
+
+# Compiled binaries
+turath
+turath-linux
+turath-macos
+turath.exe

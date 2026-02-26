@@ -1,108 +1,154 @@
 ---
 name: turath-research
-description: This skill provides specialized tools for searching and retrieving Islamic classical texts from the Turath.io API and local metadata database. Use this skill when researching Islamic literature, finding book references, extracting page content, or creating content based on classical Islamic texts.
+description: Skill untuk riset, terjemahan, dan eksplorasi 100,000+ kitab klasik Islam dari Turath.io. Gunakan skill ini saat user meminta riset literatur Islam, menerjemahkan teks Arab, mencari referensi kitab, atau membuat konten berdasarkan teks klasik.
 ---
 
 # Turath Research Skill
 
-This skill provides direct access to the Turath.io library (100,000+ Islamic classical texts) and local metadata database for deep research into Islamic literature.
+Akses langsung ke perpustakaan Turath.io (100,000+ kitab klasik Islam) dan database metadata lokal untuk riset mendalam literatur Islam.
 
-## When to Use
+## Aturan Penting
 
-This skill should be used when:
-- Searching for specific Arabic terms across Islamic classical texts
-- Retrieving book details, author biographies, or page content
-- Finding category or author IDs for filtered searches
-- Creating content based on classical Islamic texts (articles, videos, social media)
-- Building research workflows for Islamic studies
+1. **Selalu mulai dengan pencarian** — jangan menebak ID buku atau penulis. Cari dulu.
+2. **Konfirmasi dulu sebelum kerja berat** — sebelum menerjemahkan atau riset panjang, pastikan buku dan halaman yang dimaksud sudah benar.
+3. **Bersabar dan bertahap** — terjemahan dan riset kitab klasik butuh ketelitian. Kerjakan per halaman, jangan langsung banyak.
+4. **Selalu sertakan referensi** — setiap kutipan harus menyebutkan nama kitab, penulis, jilid, dan halaman.
 
-## Available Tools
+---
 
-### 1. `turath_search`
+## File Lokasi
 
-Search the library for Arabic queries. Returns results enriched with local metadata.
+**PENTING:** Semua file referensi ada di direktori yang sama dengan SKILL.md ini. Jangan cari di tempat lain.
 
-**Parameters:**
-- `query` (string, required): Arabic search query
-- `precision` (number): 0=broad (default), 3=exact match
-- `category` (number): Category ID to filter results
-- `author` (number): Author ID to filter results
-- `page` (number): Result page number for pagination
-- `sort_field` (string): "page_id", "death", or "default"
+| File | Lokasi | Fungsi | Kapan Dibaca |
+|------|--------|--------|--------------|
+| `workflows/terjemahan.md` | Direktori ini | Langkah detail terjemahan kitab | Saat user minta **terjemahkan** |
+| `workflows/riset.md` | Direktori ini | Langkah detail riset topik Islam | Saat user minta **riset/cari hukum** |
+| `workflows/konten.md` | Direktori ini | Langkah detail buat konten | Saat user minta **buat materi/konten** |
+| `templates/terjemahan.md` | Direktori ini | Format baku output terjemahan | Saat menerjemahkan |
+| `templates/riset.md` | Direktori ini | Format baku output riset | Saat output riset |
+| `templates/konten.md` | Direktori ini | Format baku output konten | Saat output konten |
+| `examples/01-terjemahan-kitab.md` | Direktori ini | Contoh percakapan terjemahan | Referensi cara interaksi |
+| `examples/02-riset-hukum-fiqih.md` | Direktori ini | Contoh riset hukum 4 mazhab | Referensi cara riset |
+| `examples/03-cari-hadits.md` | Direktori ini | Contoh pencarian hadits | Referensi cara cari hadits |
+| `examples/04-eksplorasi-ulama.md` | Direktori ini | Contoh eksplorasi karya ulama | Referensi cara eksplorasi |
+| `examples/05-konten-kajian.md` | Direktori ini | Contoh buat materi kajian | Referensi cara buat konten |
+| `examples/06-perbandingan-kitab.md` | Direktori ini | Contoh perbandingan antar kitab | Referensi cara bandingkan |
 
-**Example prompt:** "Search for صحيح البخاري in the Turath library"
+### Cara Pakai File Referensi
 
-### 2. `turath_get_book`
+- **Saat user minta terjemahkan:** baca `workflows/terjemahan.md` + `templates/terjemahan.md` + `examples/01-terjemahan-kitab.md`
+- **Saat user minta riset:** baca `workflows/riset.md` + `templates/riset.md` + contoh yang relevan
+- **Saat user minta buat konten:** baca `workflows/konten.md` + `templates/konten.md` + `examples/05-konten-kajian.md`
 
-Get detailed information about a specific book.
+---
 
-**Parameters:**
-- `book_id` (number, required): The book ID
-- `include` (string): Optional - "indexes" for table of contents
+## Tools yang Tersedia
 
-**Example prompt:** "Get details for book 9942 from Turath"
+### 1. `turath_search` — Cari teks di perpustakaan
 
-### 3. `turath_get_page`
+| Parameter | Wajib | Deskripsi |
+|-----------|-------|-----------|
+| `query` | Ya | Query pencarian dalam bahasa Arab |
+| `precision` | Tidak | 0=luas (default), 3=persis |
+| `category` | Tidak | Filter berdasarkan ID kategori |
+| `author` | Tidak | Filter berdasarkan ID penulis |
+| `page` | Tidak | Nomor halaman hasil pencarian |
+| `sort_field` | Tidak | Urutan: "page_id" atau "death" |
 
-Get the text content of a specific page.
+### 2. `turath_get_book` — Info detail buku
 
-**Parameters:**
-- `book_id` (number, required): The book ID
-- `page_number` (number, required): Page number
+| Parameter | Wajib | Deskripsi |
+|-----------|-------|-----------|
+| `book_id` | Ya | ID buku |
+| `include` | Tidak | "indexes" untuk daftar isi |
 
-**Example prompt:** "Show me page 5 of book 9942"
+### 3. `turath_get_page` — Ambil isi halaman
 
-### 4. `turath_get_author`
+| Parameter | Wajib | Deskripsi |
+|-----------|-------|-----------|
+| `book_id` | Ya | ID buku |
+| `page_number` | Ya | Nomor halaman |
 
-Get author biography and death dates.
+### 4. `turath_get_book_file` — Download seluruh buku (JSON)
 
-**Parameters:**
-- `author_id` (number, required): The author ID
+| Parameter | Wajib | Deskripsi |
+|-----------|-------|-----------|
+| `book_id` | Ya | ID buku |
 
-**Example prompt:** "Get the biography of author 123"
+### 5. `turath_get_author` — Biografi penulis
 
-### 5. `turath_filter_ids`
+| Parameter | Wajib | Deskripsi |
+|-----------|-------|-----------|
+| `author_id` | Ya | ID penulis |
 
-Find category/author IDs by Arabic name for filtering searches.
+### 6. `turath_filter_ids` — Cari ID kategori/penulis berdasarkan nama Arab
 
-**Parameters:**
-- `category_name` (string): Arabic category name to search
-- `author_name` (string): Arabic author name to search
+| Parameter | Wajib | Deskripsi |
+|-----------|-------|-----------|
+| `category_name` | Tidak | Nama kategori dalam bahasa Arab |
+| `author_name` | Tidak | Nama penulis dalam bahasa Arab |
 
-**Example prompt:** "Find the category ID for فقه"
+### 7. `turath_list_categories` — Daftar semua kategori (~40)
 
-### 6. `turath_list_categories`
+Tanpa parameter.
 
-List all ~40 available categories. No parameters needed.
+### 8. `turath_list_authors` — Daftar semua penulis (~3,100)
 
-**Example prompt:** "List all available categories in Turath"
+Tanpa parameter.
 
-### 7. `turath_list_authors`
+---
 
-List all ~3,100 available authors with death dates. No parameters needed.
+## Routing: Kapan Pakai Workflow Mana
 
-**Example prompt:** "List all available authors in Turath"
+| User bilang... | Baca file | Aksi |
+|----------------|-----------|------|
+| "terjemahkan", "translate", "artikan" | `workflows/terjemahan.md` | Tanya kitab + halaman dulu |
+| "riset", "cari hukum", "apa pendapat", "menurut mazhab" | `workflows/riset.md` | Pahami konteks, cari multi-sumber |
+| "cari hadits", "hadits tentang" | `workflows/riset.md` | Cari matan + takhrij |
+| "buatkan materi", "buat kajian", "ceramah", "artikel" | `workflows/konten.md` | Riset dulu, lalu susun konten |
+| "siapa [ulama]", "karya [ulama]" | Langsung pakai tools | `filter_ids` → `get_author` |
+| "buku apa", "cari kitab" | Langsung pakai tools | `search` → `get_book` |
+| "daftar kategori/penulis" | Langsung pakai tools | `list_categories` / `list_authors` |
 
-## Workflow Examples
+---
 
-### Research Workflow
+## Prinsip Utama
 
-1. Find category ID: "Find the category ID for الفقه الشافعي"
-2. Search with filter: "Search for الصلاة in category [ID from step 1]"
-3. Get book details: "Get details for book [ID from search results]"
-4. Extract page content: "Show me page 1 of book [book ID]"
+### Terjemahan
+- **SELALU tanya dulu**: kitab apa, halaman berapa
+- **SELALU bertahap**: per halaman, jangan sekaligus
+- **SELALU bilingual**: tampilkan Arab + terjemahan
+- **SELALU minta user bersabar**: "Mohon bersabar, menerjemahkan kitab klasik membutuhkan ketelitian"
 
-### Content Creation Workflow
+### Riset
+- **SELALU dari sumber primer**: kitab asli ulama
+- **SELALU multi-sumber**: minimal 2-3 referensi untuk topik khilafiyah
+- **SELALU jujur**: jika ada perbedaan pendapat, sebutkan semua
+- **SELALU sertakan kutipan Arab**: setiap klaim harus ada teks asli
 
-1. Get book structure: "Get the table of contents for book 9942"
-2. Extract content: "Show me pages 1-10 of book 9942"
-3. Process content for articles, videos, or social media posts
+### Konten
+- **SELALU dari kitab**: jangan mengarang, harus ada sumber
+- **SELALU sesuai konteks**: ceramah ≠ artikel ≠ media sosial
+- **SELALU tawarkan revisi**: tanya user mau disesuaikan atau tidak
 
-## Local Database
+---
 
-The plugin uses a local SQLite database (`data/turath_metadata.db`) containing:
-- ~40 categories
-- ~3,100 authors
-- Book metadata with PDF links
+## Tips Pencarian
 
-This enables offline metadata access and enriches API results with additional information like Shamela links, category names, and PDF download links.
+- Gunakan **kata kunci Arab** untuk hasil terbaik
+- `precision: 0` untuk pencarian luas, `precision: 2-3` untuk frasa persis
+- `turath_filter_ids` dulu → dapat ID → baru `turath_search` dengan filter
+- `turath_get_book_file` HANYA untuk seluruh buku — untuk 1-5 halaman pakai `turath_get_page`
+- Jika tidak ketemu, coba variasi ejaan Arab (dengan/tanpa ال, dengan/tanpa tasydid)
+
+---
+
+## Database Lokal
+
+Plugin menggunakan database SQLite lokal (`data/turath_metadata.db`) berisi:
+- ~40 kategori kitab
+- ~3,100 penulis dengan tahun wafat
+- Metadata buku termasuk link PDF dan link Shamela
+
+Akses metadata offline dan memperkaya hasil API dengan informasi tambahan.

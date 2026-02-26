@@ -26,7 +26,12 @@
     "vitest": "^4.0.18"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "cli": "bun run cli.ts",
+    "build": "bun build ./cli.ts --compile --outfile=turath",
+    "build:linux": "bun build ./cli.ts --compile --target=bun-linux-x64 --outfile=turath-linux",
+    "build:macos": "bun build ./cli.ts --compile --target=bun-darwin-x64 --outfile=turath-macos",
+    "build:windows": "bun build ./cli.ts --compile --target=bun-windows-x64 --outfile=turath.exe"
   },
   "peerDependencies": {
     "openclaw": "*"
