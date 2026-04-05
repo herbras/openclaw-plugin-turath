@@ -16,6 +16,7 @@ import {
   executeGetBookFile,
 } from "./src/tools/book.js";
 import { executeGetAuthor } from "./src/tools/author.js";
+import { fetchBookFile } from "./src/turath-api.js";
 import {
   executeFilterIds,
   executeListCategories,
@@ -67,6 +68,11 @@ ${c.bold("COMMANDS")}
   ${c.cyan("search")} <query>           Search Islamic texts
   ${c.cyan("book")} <id>                Get book info
   ${c.cyan("page")} <book_id> <page>    Get page content
+  ${c.cyan("read")} <book_id>           Interactive book reader
+  ${c.cyan("toc")} <book_id>            Show table of contents
+  ${c.cyan("export")} <book_id>          Export book to file
+  ${c.cyan("compare")} <id1> <id2>       Compare two books side-by-side
+  ${c.cyan("random")}                   Random book quote
   ${c.cyan("book-file")} <id>           Download full book JSON
   ${c.cyan("author")} <id>              Get author info
   ${c.cyan("filter")} [options]         Find category/author IDs by name
@@ -84,6 +90,12 @@ ${c.bold("SEARCH OPTIONS")}
   --page <n>               Result page number
   --sort <field>           Sort: page_id | death
 
+${c.bold("READ OPTIONS")}
+  --start <page>           Start reading from page (default: 1)
+
+${c.bold("EXPORT OPTIONS")}
+  --format <md|txt>        Export format (default: md)
+
 ${c.bold("FILTER OPTIONS")}
   --category-name <name>   Arabic category name to search
   --author-name <name>     Arabic author name to search
@@ -93,6 +105,12 @@ ${c.bold("EXAMPLES")}
   turath search "الحديث" --precision 2 --category 5
   turath book 21796
   turath page 21796 10
+  turath read 21796
+  turath read 21796 --start 50
+  turath toc 21796
+  turath export 21796 --format md
+  turath compare 21796 12345
+  turath random
   turath author 641
   turath filter --author-name "ابن تيمية"
   turath categories
@@ -117,6 +135,334 @@ function stripHtml(html: string): string {
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">");
+}
+
+// ── Interactive Input Helper ─────────────────────────────────────
+
+function prompt(question: string): Promise<string> {
+  return new Promise((resolve) => {
+    process.stdout.write(question);
+    let data = "";
+    process.stdin.setEncoding("utf-8");
+    process.stdin.resume();
+    process.stdin.once("data", (chunk: string) => {
+      data = chunk.trim();
+      process.stdin.pause();
+      resolve(data);
+    });
+  });
+}
+
+// ── New Feature Printers ────────────────────────────────────────
+
+async function runInteractiveReader(
+  db: any,
+  bookId: number,
+  startPage: number,
+): Promise<void> {
+  // Fetch book info first to get total pages and name
+  const bookInfo = await executeGetBook(db, { book_id: bookId });
+  const bookName =
+    bookInfo.local_book_name || bookInfo.meta?.name || `Book ${bookId}`;
+  const indexes = bookInfo.indexes;
+  const pageMap = indexes?.page_map;
+  const totalPages = pageMap ? pageMap.length : null;
+
+  console.log(c.bold(`\n  ${bookName}`));
+  console.log(c.dim("─".repeat(50)));
+  if (totalPages) console.log(c.dim(`  Total pages: ${totalPages}`));
+  console.log(
+    c.dim("  Controls: [n]ext  [p]rev  [g]oto  [q]uit\n"),
+  );
+
+  let currentPage = startPage;
+
+  while (true) {
+    try {
+      const result = await executeGetPage({
+        book_id: bookId,
+        page_number: currentPage,
+      });
+      const meta = result.meta || {};
+      const pageLabel = [
+        meta.vol && `Vol ${meta.vol}`,
+        meta.page && `Page ${meta.page}`,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      console.log(
+        c.cyan(`── Page ${currentPage}`) +
+          (pageLabel ? c.dim(` (${pageLabel})`) : "") +
+          (totalPages ? c.dim(` of ${totalPages}`) : "") +
+          c.cyan(" ──"),
+      );
+      if (meta.headings?.length)
+        console.log(c.yellow(meta.headings.join(" > ")));
+      console.log();
+      console.log(stripHtml(result.text || ""));
+      console.log();
+    } catch {
+      console.log(c.red(`  Page ${currentPage} not found.`));
+    }
+
+    const input = await prompt(
+      c.dim(`[n/p/g/q] (current: ${currentPage})> `),
+    );
+
+    if (input === "q" || input === "quit") break;
+    else if (input === "n" || input === "") currentPage++;
+    else if (input === "p") currentPage = Math.max(1, currentPage - 1);
+    else if (input === "g" || input.startsWith("g")) {
+      const num = parseInt(input.replace("g", "").trim()) || 0;
+      if (num > 0) currentPage = num;
+      else {
+        const pageInput = await prompt(c.dim("  Go to page: "));
+        const parsed = parseInt(pageInput);
+        if (parsed > 0) currentPage = parsed;
+      }
+    } else {
+      const parsed = parseInt(input);
+      if (parsed > 0) currentPage = parsed;
+    }
+  }
+  console.log(c.dim("\nDone reading."));
+}
+
+function printToc(data: any): void {
+  if (jsonMode) return out(data);
+
+  const bookName =
+    data.local_book_name || data.meta?.name || "Unknown Book";
+  const headings = data.indexes?.headings || [];
+
+  console.log(c.bold(bookName));
+  console.log(c.dim("─".repeat(50)));
+
+  if (!headings.length) {
+    console.log(c.yellow("  No table of contents available for this book."));
+    return;
+  }
+
+  console.log(c.bold(`  ${headings.length} headings\n`));
+
+  for (const h of headings) {
+    const indent = "  ".repeat(h.level || 1);
+    console.log(`${indent}${c.dim(`p.${h.page}`)} ${h.title}`);
+  }
+}
+
+async function runExport(
+  bookId: number,
+  format: string,
+): Promise<void> {
+  console.log(c.dim(`Downloading book ${bookId}...`));
+  const bookData = await fetchBookFile(bookId);
+  const bookName = bookData.meta?.name || `book_${bookId}`;
+  const pages = bookData.pages || [];
+  const headings = bookData.indexes?.headings || [];
+
+  // Build heading lookup: page number -> heading titles
+  const headingMap = new Map<number, string[]>();
+  for (const h of headings) {
+    if (!headingMap.has(h.page)) headingMap.set(h.page, []);
+    headingMap.get(h.page)!.push(h.title);
+  }
+
+  const lines: string[] = [];
+
+  if (format === "md") {
+    lines.push(`# ${bookName}\n`);
+    if (bookData.meta?.details) lines.push(`> ${stripHtml(bookData.meta.details)}\n`);
+    lines.push(`---\n`);
+
+    for (const page of pages) {
+      const pageNum = page.page;
+      if (pageNum !== undefined && headingMap.has(pageNum)) {
+        for (const title of headingMap.get(pageNum)!) {
+          lines.push(`\n## ${title}\n`);
+        }
+      }
+      const vol = page.vol ? `[Vol ${page.vol}] ` : "";
+      const pg = pageNum !== undefined ? `Page ${pageNum}` : "";
+      if (vol || pg) lines.push(`\n*${vol}${pg}*\n`);
+      lines.push(stripHtml(page.text || ""));
+      lines.push("");
+    }
+  } else {
+    lines.push(bookName);
+    lines.push("=".repeat(bookName.length));
+    lines.push("");
+
+    for (const page of pages) {
+      const pageNum = page.page;
+      if (pageNum !== undefined && headingMap.has(pageNum)) {
+        for (const title of headingMap.get(pageNum)!) {
+          lines.push(`\n--- ${title} ---\n`);
+        }
+      }
+      const vol = page.vol ? `[Vol ${page.vol}] ` : "";
+      const pg = pageNum !== undefined ? `Page ${pageNum}` : "";
+      if (vol || pg) lines.push(`${vol}${pg}`);
+      lines.push(stripHtml(page.text || ""));
+      lines.push("");
+    }
+  }
+
+  const ext = format === "md" ? "md" : "txt";
+  const safeBookName = bookName.replace(/[/\\?%*:|"<>]/g, "_").slice(0, 100);
+  const filename = `${safeBookName}_${bookId}.${ext}`;
+
+  const fs = await import("node:fs");
+  fs.writeFileSync(filename, lines.join("\n"), "utf-8");
+  console.log(
+    c.green(`Exported ${pages.length} pages to `) + c.bold(filename),
+  );
+}
+
+async function runCompare(db: any, id1: number, id2: number): Promise<void> {
+  const [book1, book2] = await Promise.all([
+    executeGetBook(db, { book_id: id1 }),
+    executeGetBook(db, { book_id: id2 }),
+  ]);
+
+  if (jsonMode) return out({ book1, book2 });
+
+  const name1 = book1.local_book_name || book1.meta?.name || `Book ${id1}`;
+  const name2 = book2.local_book_name || book2.meta?.name || `Book ${id2}`;
+
+  const w = 35; // column width
+  const pad = (s: string) => {
+    // Pad considering Arabic chars might have different display width
+    const len = s.length;
+    return len >= w ? s.slice(0, w) : s + " ".repeat(w - len);
+  };
+
+  console.log(
+    c.bold("\n  " + pad("") + pad(name1.slice(0, w)) + "  " + name2.slice(0, w)),
+  );
+  console.log("  " + "─".repeat(w * 2 + w + 2));
+
+  const rows: [string, string, string][] = [
+    [
+      "ID",
+      String(id1),
+      String(id2),
+    ],
+    [
+      "Author",
+      book1.local_author_name || "-",
+      book2.local_author_name || "-",
+    ],
+    [
+      "Category",
+      book1.local_category_name || "-",
+      book2.local_category_name || "-",
+    ],
+    [
+      "Author Death",
+      book1.local_author_death ? `${book1.local_author_death} AH` : "-",
+      book2.local_author_death ? `${book2.local_author_death} AH` : "-",
+    ],
+    [
+      "Headings",
+      String(book1.indexes?.headings?.length || 0),
+      String(book2.indexes?.headings?.length || 0),
+    ],
+    [
+      "Volumes",
+      book1.indexes?.volumes?.length
+        ? book1.indexes.volumes.join(", ")
+        : "-",
+      book2.indexes?.volumes?.length
+        ? book2.indexes.volumes.join(", ")
+        : "-",
+    ],
+    [
+      "PDF",
+      book1.local_pdf_links ? "Yes" : "No",
+      book2.local_pdf_links ? "Yes" : "No",
+    ],
+  ];
+
+  for (const [label, v1, v2] of rows) {
+    const match = v1 === v2;
+    const marker = match ? c.dim("=") : c.yellow("≠");
+    console.log(
+      `  ${c.cyan(pad(label))}${pad(v1)}${marker} ${v2}`,
+    );
+  }
+  console.log();
+}
+
+async function runRandom(db: any): Promise<void> {
+  // Pick a random book from DB
+  const row = db
+    .prepare(
+      "SELECT id, name, author_id FROM books ORDER BY RANDOM() LIMIT 1",
+    )
+    .get() as { id: number; name: string; author_id: number } | undefined;
+
+  if (!row) {
+    console.log(c.red("No books found in database."));
+    return;
+  }
+
+  const bookId = row.id;
+  const bookName = row.name;
+
+  // Get author name
+  const authorRow = db
+    .prepare("SELECT name FROM authors WHERE id = ?")
+    .get(row.author_id) as { name: string } | undefined;
+
+  // Fetch a random page from this book
+  try {
+    const bookInfo = await executeGetBook(db, { book_id: bookId });
+    const pageMap = bookInfo.indexes?.page_map;
+    const totalPages = pageMap ? pageMap.length : 10;
+    const randomPage = Math.floor(Math.random() * totalPages) + 1;
+
+    const page = await executeGetPage({
+      book_id: bookId,
+      page_number: randomPage,
+    });
+
+    const text = stripHtml(page.text || "").trim();
+    // Take a meaningful snippet (first 500 chars)
+    const snippet = text.slice(0, 500) + (text.length > 500 ? "..." : "");
+
+    if (jsonMode) {
+      return out({
+        book_id: bookId,
+        book_name: bookName,
+        author_name: authorRow?.name,
+        page: randomPage,
+        text: snippet,
+      });
+    }
+
+    console.log(c.dim("─".repeat(50)));
+    console.log();
+    console.log("  " + snippet.replace(/\n/g, "\n  "));
+    console.log();
+    console.log(c.dim("─".repeat(50)));
+    console.log(
+      c.cyan(`  ${bookName}`) +
+        (authorRow ? c.dim(` — ${authorRow.name}`) : ""),
+    );
+    console.log(
+      c.dim(`  Page ${randomPage}`) +
+        c.dim(` · Book ID: ${bookId}`),
+    );
+    console.log();
+  } catch {
+    // If API call fails, just show the book info
+    if (jsonMode) return out({ book_id: bookId, book_name: bookName, author_name: authorRow?.name });
+    console.log(c.cyan(`  ${bookName}`) + (authorRow ? c.dim(` — ${authorRow.name}`) : ""));
+    console.log(c.dim(`  Book ID: ${bookId}`));
+    console.log(c.yellow("  (Could not fetch page content)"));
+  }
 }
 
 function printSearchResults(data: any): void {
@@ -294,6 +640,61 @@ async function main() {
           page_number: pageNum,
         });
         printPage(result);
+        break;
+      }
+
+      case "read": {
+        const id = Number(filteredArgs[1]);
+        if (!id || isNaN(id)) {
+          console.error(c.red("Error: read requires a numeric book ID"));
+          process.exit(1);
+        }
+        const startPage = getNumOpt("--start") || 1;
+        await runInteractiveReader(db, id, startPage);
+        break;
+      }
+
+      case "toc": {
+        const id = Number(filteredArgs[1]);
+        if (!id || isNaN(id)) {
+          console.error(c.red("Error: toc requires a numeric book ID"));
+          process.exit(1);
+        }
+        const result = await executeGetBook(db, { book_id: id });
+        printToc(result);
+        break;
+      }
+
+      case "export": {
+        const id = Number(filteredArgs[1]);
+        if (!id || isNaN(id)) {
+          console.error(c.red("Error: export requires a numeric book ID"));
+          process.exit(1);
+        }
+        const format = getOpt("--format") || "md";
+        if (format !== "md" && format !== "txt") {
+          console.error(c.red("Error: --format must be 'md' or 'txt'"));
+          process.exit(1);
+        }
+        await runExport(id, format);
+        break;
+      }
+
+      case "compare": {
+        const id1 = Number(filteredArgs[1]);
+        const id2 = Number(filteredArgs[2]);
+        if (!id1 || isNaN(id1) || !id2 || isNaN(id2)) {
+          console.error(
+            c.red("Error: compare requires two numeric book IDs"),
+          );
+          process.exit(1);
+        }
+        await runCompare(db, id1, id2);
+        break;
+      }
+
+      case "random": {
+        await runRandom(db);
         break;
       }
 
