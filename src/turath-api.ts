@@ -1,3 +1,9 @@
+/**
+ * Dibuat oleh Ibrahim Nurul Huda
+ * Website: sarbeh.com
+ * https://academy.founderplus.id/p/turath-plugin
+ */
+
 import { request } from "undici";
 import type {
   QueryParameters,

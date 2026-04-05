@@ -1,3 +1,9 @@
+/**
+ * Dibuat oleh Ibrahim Nurul Huda
+ * Website: sarbeh.com
+ * https://academy.founderplus.id/p/turath-plugin
+ */
+
 import { registerSearchTools } from "./src/tools/search.js";
 import { registerBookTools } from "./src/tools/book.js";
 import { registerAuthorTools } from "./src/tools/author.js";

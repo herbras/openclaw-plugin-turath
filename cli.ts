@@ -1,4 +1,10 @@
 #!/usr/bin/env bun
+/**
+ * Dibuat oleh Ibrahim Nurul Huda
+ * Website: sarbeh.com
+ * https://academy.founderplus.id/p/turath-plugin
+ */
+
 // @ts-ignore — bun:sqlite embedded import (with { type: "sqlite", embed: "true" })
 // In compiled binary: DB is embedded in the executable and loaded in-memory
 // In dev mode (bun run): this import loads the file from disk

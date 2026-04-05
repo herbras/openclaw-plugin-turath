@@ -2,6 +2,8 @@
   "id": "turath",
   "name": "Turath Islamic Research",
   "description": "Search and retrieve 100,000+ Islamic classical texts from Turath.io with local metadata enrichment",
+  "author": "Ibrahim Nurul Huda (sarbeh.com)",
+  "homepage": "https://academy.founderplus.id/p/turath-plugin",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,

@@ -1,3 +1,9 @@
+/**
+ * Dibuat oleh Ibrahim Nurul Huda
+ * Website: sarbeh.com
+ * https://academy.founderplus.id/p/turath-plugin
+ */
+
 export function normalizeArabicSearchTerm(searchTerm: string): string[] {
   if (!searchTerm) return [];
 

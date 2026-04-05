@@ -1,3 +1,9 @@
+/**
+ * Dibuat oleh Ibrahim Nurul Huda
+ * Website: sarbeh.com
+ * https://academy.founderplus.id/p/turath-plugin
+ */
+
 import { describe, it, expect } from "vitest";
 import { normalizeArabicSearchTerm } from "../src/arabic-utils.js";
 

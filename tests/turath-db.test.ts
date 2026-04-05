@@ -1,3 +1,9 @@
+/**
+ * Dibuat oleh Ibrahim Nurul Huda
+ * Website: sarbeh.com
+ * https://academy.founderplus.id/p/turath-plugin
+ */
+
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type Database from "better-sqlite3";
 import { getDb, enrichSearchResult, enrichBookInfo, enrichAuthor } from "../src/turath-db.js";

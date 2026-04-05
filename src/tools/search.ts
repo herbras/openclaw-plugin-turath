@@ -1,3 +1,9 @@
+/**
+ * Dibuat oleh Ibrahim Nurul Huda
+ * Website: sarbeh.com
+ * https://academy.founderplus.id/p/turath-plugin
+ */
+
 import type Database from "better-sqlite3";
 import type { SearchApiResponse } from "../types.js";
 import { SortField } from "../types.js";

@@ -1,3 +1,9 @@
+/**
+ * Dibuat oleh Ibrahim Nurul Huda
+ * Website: sarbeh.com
+ * https://academy.founderplus.id/p/turath-plugin
+ */
+
 import Database from "better-sqlite3";
 import { fileURLToPath } from "node:url";
 import path from "node:path";

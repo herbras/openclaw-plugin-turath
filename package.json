@@ -2,6 +2,11 @@
   "name": "@bantu-ai/openclaw-turath",
   "version": "1.0.0",
   "description": "OpenClaw plugin for Islamic classical text research via Turath.io",
+  "author": {
+    "name": "Ibrahim Nurul Huda",
+    "url": "https://sarbeh.com"
+  },
+  "homepage": "https://academy.founderplus.id/p/turath-plugin",
   "type": "module",
   "main": "index.ts",
   "files": [
