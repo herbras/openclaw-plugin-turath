@@ -127,6 +127,16 @@ function out(data: any): void {
   console.log(JSON.stringify(data, null, 2));
 }
 
+// ── RTL Arabic Support ──────────────────────────────────────────
+// Ported from github.com/latiif/ara — full glyph shaping, ligatures, tashkeel, RTL
+
+import { formatArabic } from "./src/arabic-render.js";
+
+function formatArabicContent(text: string): string {
+  const width = process.stdout.columns || 80;
+  return formatArabic(text, width);
+}
+
 function stripHtml(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, "\n")
@@ -198,9 +208,9 @@ async function runInteractiveReader(
           c.cyan(" ──"),
       );
       if (meta.headings?.length)
-        console.log(c.yellow(meta.headings.join(" > ")));
+        console.log(formatArabicContent(c.yellow(meta.headings.join(" > "))));
       console.log();
-      console.log(stripHtml(result.text || ""));
+      console.log(formatArabicContent(stripHtml(result.text || "")));
       console.log();
     } catch {
       console.log(c.red(`  Page ${currentPage} not found.`));
@@ -236,7 +246,7 @@ function printToc(data: any): void {
     data.local_book_name || data.meta?.name || "Unknown Book";
   const headings = data.indexes?.headings || [];
 
-  console.log(c.bold(bookName));
+  console.log(formatArabicContent(c.bold(bookName)));
   console.log(c.dim("─".repeat(50)));
 
   if (!headings.length) {
@@ -248,7 +258,7 @@ function printToc(data: any): void {
 
   for (const h of headings) {
     const indent = "  ".repeat(h.level || 1);
-    console.log(`${indent}${c.dim(`p.${h.page}`)} ${h.title}`);
+    console.log(formatArabicContent(`${indent}${c.dim(`p.${h.page}`)} ${h.title}`));
   }
 }
 
@@ -444,12 +454,12 @@ async function runRandom(db: any): Promise<void> {
 
     console.log(c.dim("─".repeat(50)));
     console.log();
-    console.log("  " + snippet.replace(/\n/g, "\n  "));
+    console.log(formatArabicContent("  " + snippet.replace(/\n/g, "\n  ")));
     console.log();
     console.log(c.dim("─".repeat(50)));
     console.log(
-      c.cyan(`  ${bookName}`) +
-        (authorRow ? c.dim(` — ${authorRow.name}`) : ""),
+      formatArabicContent(c.cyan(`  ${bookName}`) +
+        (authorRow ? c.dim(` — ${authorRow.name}`) : "")),
     );
     console.log(
       c.dim(`  Page ${randomPage}`) +
@@ -488,7 +498,7 @@ function printSearchResults(data: any): void {
               .join(", "),
           ),
       );
-    console.log("  " + snippet.replace(/\n/g, " ").trim());
+    console.log(formatArabicContent("  " + snippet.replace(/\n/g, " ").trim()));
     console.log();
   }
 }
@@ -497,15 +507,15 @@ function printBook(data: any): void {
   if (jsonMode) return out(data);
 
   const meta = data.meta || {};
-  console.log(c.bold(meta.name || "Unknown Book"));
+  console.log(formatArabicContent(c.bold(meta.name || "Unknown Book")));
   console.log(c.dim("─".repeat(40)));
   if (data.local_book_name && data.local_book_name !== meta.name)
-    console.log("  Name (local): " + data.local_book_name);
+    console.log(formatArabicContent("  Name (local): " + data.local_book_name));
   if (data.local_author_name)
-    console.log("  Author: " + c.green(data.local_author_name));
+    console.log(formatArabicContent("  Author: " + c.green(data.local_author_name)));
   if (data.local_category_name)
-    console.log("  Category: " + data.local_category_name);
-  if (meta.info) console.log("  Info: " + stripHtml(meta.info));
+    console.log(formatArabicContent("  Category: " + data.local_category_name));
+  if (meta.info) console.log(formatArabicContent("  Info: " + stripHtml(meta.info)));
   if (data.local_pdf_links) console.log("  PDF: " + data.local_pdf_links);
   if (data.local_author_death)
     console.log("  Author death: " + data.local_author_death + " AH");
@@ -515,7 +525,7 @@ function printBook(data: any): void {
     console.log("\n" + c.bold("Table of Contents") + ` (${indexes.headings.length} headings)`);
     for (const h of indexes.headings.slice(0, 20)) {
       const indent = "  ".repeat(h.level || 1);
-      console.log(`${indent}${c.dim(`p.${h.page}`)} ${h.title}`);
+      console.log(formatArabicContent(`${indent}${c.dim(`p.${h.page}`)} ${h.title}`));
     }
     if (indexes.headings.length > 20)
       console.log(c.dim(`  ... and ${indexes.headings.length - 20} more`));
@@ -526,7 +536,7 @@ function printPage(data: any): void {
   if (jsonMode) return out(data);
 
   const meta = data.meta || {};
-  if (meta.book_name) console.log(c.bold(meta.book_name));
+  if (meta.book_name) console.log(formatArabicContent(c.bold(meta.book_name)));
   if (meta.vol || meta.page)
     console.log(
       c.dim(
@@ -536,22 +546,22 @@ function printPage(data: any): void {
       ),
     );
   if (meta.headings?.length)
-    console.log(c.yellow(meta.headings.join(" > ")));
+    console.log(formatArabicContent(c.yellow(meta.headings.join(" > "))));
 
   console.log(c.dim("─".repeat(40)));
-  console.log(stripHtml(data.text || ""));
+  console.log(formatArabicContent(stripHtml(data.text || "")));
 }
 
 function printAuthor(data: any): void {
   if (jsonMode) return out(data);
 
   const name = data.local_name || "Author";
-  console.log(c.bold(name));
+  console.log(formatArabicContent(c.bold(name)));
   console.log(c.dim("─".repeat(40)));
   if (data.local_death) console.log("  Death: " + data.local_death + " AH");
   if (data.local_death_label)
     console.log("  Death (approx): " + data.local_death_label);
-  if (data.info) console.log("\n" + stripHtml(data.info));
+  if (data.info) console.log(formatArabicContent("\n" + stripHtml(data.info)));
 }
 
 function printFilter(data: any): void {
