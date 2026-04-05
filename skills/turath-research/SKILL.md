@@ -34,6 +34,8 @@ Akses langsung ke perpustakaan Turath.io (100,000+ kitab klasik Islam) dan datab
 | `examples/04-eksplorasi-ulama.md` | Direktori ini | Contoh eksplorasi karya ulama | Referensi cara eksplorasi |
 | `examples/05-konten-kajian.md` | Direktori ini | Contoh buat materi kajian | Referensi cara buat konten |
 | `examples/06-perbandingan-kitab.md` | Direktori ini | Contoh perbandingan antar kitab | Referensi cara bandingkan |
+| `../../scripts/check-api.sh` | Root/scripts | Script cek perubahan API | Jika curiga API berubah |
+| `../../scripts/API_EXPLORATION.md` | Root/scripts | Dokumentasi endpoint API | Referensi teknis API |
 
 ### Cara Pakai File Referensi
 
@@ -72,6 +74,8 @@ Akses langsung ke perpustakaan Turath.io (100,000+ kitab klasik Islam) dan datab
 
 ### 4. `turath_get_book_file` — Download seluruh buku (JSON)
 
+Download dari CDN `files.turath.io/books-v3/`. Response menggunakan format v3 (minified keys dengan Arabic diacritics), otomatis di-decode ke format standar. Berisi seluruh halaman, metadata, dan indexes.
+
 | Parameter | Wajib | Deskripsi |
 |-----------|-------|-----------|
 | `book_id` | Ya | ID buku |
@@ -107,6 +111,11 @@ Tanpa parameter.
 | "riset", "cari hukum", "apa pendapat", "menurut mazhab" | `workflows/riset.md` | Pahami konteks, cari multi-sumber |
 | "cari hadits", "hadits tentang" | `workflows/riset.md` | Cari matan + takhrij |
 | "buatkan materi", "buat kajian", "ceramah", "artikel" | `workflows/konten.md` | Riset dulu, lalu susun konten |
+| "bandingkan kitab", "compare" | `workflows/riset.md` | `compare` (CLI) atau `get_book` x2 |
+| "export", "simpan kitab", "download" | Langsung pakai tools | `get_book_file` atau arahkan CLI `export` |
+| "baca kitab", "read" | Langsung pakai tools | Arahkan ke CLI `turath read <id>` |
+| "daftar isi", "toc" | Langsung pakai tools | `get_book` dengan indexes, atau CLI `toc` |
+| "kutipan acak", "random", "inspirasi" | Langsung pakai tools | Arahkan ke CLI `turath random` |
 | "siapa [ulama]", "karya [ulama]" | Langsung pakai tools | `filter_ids` → `get_author` |
 | "buku apa", "cari kitab" | Langsung pakai tools | `search` → `get_book` |
 | "daftar kategori/penulis" | Langsung pakai tools | `list_categories` / `list_authors` |
@@ -139,16 +148,61 @@ Tanpa parameter.
 - Gunakan **kata kunci Arab** untuk hasil terbaik
 - `precision: 0` untuk pencarian luas, `precision: 2-3` untuk frasa persis
 - `turath_filter_ids` dulu → dapat ID → baru `turath_search` dengan filter
-- `turath_get_book_file` HANYA untuk seluruh buku — untuk 1-5 halaman pakai `turath_get_page`
+- `turath_get_book_file` untuk download seluruh buku (CDN v3) — untuk 1-5 halaman pakai `turath_get_page`
 - Jika tidak ketemu, coba variasi ejaan Arab (dengan/tanpa ال, dengan/tanpa tasydid)
+
+---
+
+## CLI: Fitur Tambahan (Binary `turath`)
+
+Selain 8 tools di atas, CLI binary menyediakan fitur tambahan yang bisa direkomendasikan ke user:
+
+| Command | Fungsi | Kapan Rekomendasikan |
+|---------|--------|----------------------|
+| `turath read <book_id>` | Baca kitab interaktif (navigasi halaman per halaman: next/prev/goto) | User mau baca kitab langsung di terminal |
+| `turath toc <book_id>` | Tampilkan daftar isi lengkap (semua heading, bukan hanya 20) | User butuh navigasi ke bab tertentu |
+| `turath export <book_id> --format md\|txt` | Export seluruh buku ke file Markdown atau plaintext | User mau simpan offline, import ke Obsidian/Notion |
+| `turath compare <id1> <id2>` | Bandingkan metadata 2 kitab side-by-side (penulis, kategori, jilid, dll) | User mau pilih edisi atau bandingkan 2 kitab |
+| `turath random` | Tampilkan kutipan acak dari kitab random | User cari inspirasi, quote harian |
+| `turath search "<query>"` | Cari teks di perpustakaan | Sama dengan tool `turath_search` |
+
+### Kapan Arahkan ke CLI vs Tools
+
+- **Pakai tools** untuk: riset multi-langkah, terjemahan, konten — karena AI bisa proses hasilnya
+- **Arahkan ke CLI** untuk: baca kitab langsung, export file, perbandingan cepat — karena output ke terminal/file lebih cocok
+
+### Contoh Rekomendasi ke User
+
+> "Kitab ini bisa kamu baca langsung di terminal dengan: `turath read 21796`"
+>
+> "Untuk menyimpan seluruh kitab ini sebagai Markdown: `turath export 21796 --format md`"
+>
+> "Mau bandingkan cepat kedua kitab ini? Jalankan: `turath compare 21796 9783`"
 
 ---
 
 ## Database Lokal
 
 Plugin menggunakan database SQLite lokal (`data/turath_metadata.db`) berisi:
+- ~8,200+ buku
 - ~40 kategori kitab
 - ~3,100 penulis dengan tahun wafat
 - Metadata buku termasuk link PDF dan link Shamela
 
 Akses metadata offline dan memperkaya hasil API dengan informasi tambahan.
+
+---
+
+## API Endpoints (Referensi Teknis)
+
+| Endpoint | URL | Keterangan |
+|----------|-----|------------|
+| Book Info | `https://api.turath.io/book?id={id}&include=indexes&ver=3` | Metadata + indexes |
+| Page Content | `https://api.turath.io/page?book_id={id}&pg={n}&ver=3` | Isi halaman |
+| Search | `https://api.turath.io/search?q={query}&ver=3` | Pencarian teks |
+| Book File (CDN) | `https://files.turath.io/books-v3/{id}.json` | Seluruh buku (format v3 minified) |
+
+- Semua endpoint publik, tidak perlu API key
+- Header: `Accept: application/json`
+- CDN book file menggunakan format v3 dengan Arabic diacritics sebagai keys (otomatis di-decode oleh plugin)
+- Cek `scripts/check-api.sh` untuk verifikasi apakah API masih stabil

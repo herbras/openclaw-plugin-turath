@@ -137,3 +137,26 @@ turath_filter_ids { author_name: "الشاطبي" }
 turath_get_book { book_id: [muwafaqat], include: "indexes" }
   → ambil daftar isi untuk navigasi ke bab maqashid
 ```
+
+---
+
+## Tips: Manfaatkan Fitur CLI
+
+Jika user memiliki CLI `turath` terinstall, rekomendasikan fitur berikut:
+
+### Cari inspirasi konten
+> "Butuh inspirasi? Jalankan `turath random` untuk kutipan acak dari kitab — bisa jadi ide kajian!"
+
+### Export sumber bahan konten
+> "Untuk menyimpan seluruh isi kitab yang mau dijadikan bahan:
+> `turath export [book_id] --format md`
+> Hasilnya file Markdown yang bisa diedit langsung."
+
+### Lihat daftar isi untuk pilih bab
+> "Mau lihat bab-bab yang tersedia?
+> `turath toc [book_id]`"
+
+### Bandingkan sumber sebelum menulis
+> "Mau bandingkan dua kitab sebagai sumber?
+> `turath compare [id1] [id2]`
+> Tampilkan perbandingan penulis, kategori, jilid, dll."

@@ -121,3 +121,27 @@ Atau jika dalam konteks bab:
 > "Kitab ini memiliki [N] halaman. Menerjemahkan seluruhnya akan memakan waktu sangat lama dan hasilnya mungkin kurang akurat.
 >
 > Saya sarankan kita kerjakan per bab. Mau mulai dari bab mana?"
+
+---
+
+## Tips: Manfaatkan Fitur CLI
+
+Jika user memiliki CLI `turath` terinstall, rekomendasikan fitur yang relevan:
+
+### Baca kitab langsung di terminal
+> "Kalau mau baca kitab ini langsung di terminal tanpa terjemahan, kamu bisa jalankan:
+> `turath read [book_id]`
+> Navigasi pakai n (next), p (prev), g (goto halaman), q (quit)."
+
+### Export untuk terjemahan offline
+> "Kalau mau terjemahkan offline, export dulu kitabnya:
+> `turath export [book_id] --format md`
+> File Markdown-nya bisa dibuka di editor/Obsidian."
+
+### Lihat daftar isi lengkap
+> "Mau lihat daftar isi lengkap dulu? Jalankan:
+> `turath toc [book_id]`"
+
+### Mulai dari halaman tertentu
+> "Mau langsung baca dari halaman 50? Jalankan:
+> `turath read [book_id] --start 50`"

@@ -108,3 +108,32 @@ Mau saya dalami salah satu kitab? Atau cari pembahasan yang sama di kitab mazhab
 4. **Ringkasan per kitab** — jelaskan pendapat masing-masing secara terpisah dulu.
 5. **Tabel perbandingan** — bantu user melihat perbedaan dan persamaan.
 6. **Kesimpulan** — rangkum poin utama persamaan dan perbedaan.
+
+---
+
+## Shortcut: Perbandingan Cepat via CLI
+
+Sebelum melakukan perbandingan isi yang mendalam, user bisa mendapatkan perbandingan metadata secara instan menggunakan CLI:
+
+```bash
+turath compare AAAA BBBB
+```
+
+Output contoh:
+```
+                             فتح الباري                        المغني
+  ──────────────────────────────────────────────────────────────────────
+  ID                         AAAA                             ≠ BBBB
+  Author                     ابن حجر العسقلاني                ≠ ابن قدامة المقدسي
+  Category                   شروح الحديث                      ≠ الفقه الحنبلي
+  Author Death               852 AH                           ≠ 620 AH
+  Headings                   5230                             ≠ 3450
+  Volumes                    1-13                             ≠ 1-15
+  PDF                        Yes                              = Yes
+```
+
+Ini membantu user memahami perbedaan mendasar kedua kitab sebelum masuk ke perbandingan isi yang lebih detail.
+
+**Kapan pakai `compare` vs riset manual:**
+- `compare` → perbandingan metadata cepat (penulis, kategori, ukuran)
+- Riset manual → perbandingan **isi/pembahasan** topik tertentu di kedua kitab

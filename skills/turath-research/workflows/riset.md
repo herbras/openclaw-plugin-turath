@@ -67,6 +67,14 @@ Sebelum mulai cari, pahami dulu:
 3. turath_search { query: "[nama ulama]" } → cari di kitab-kitab tabaqat/tarajim
 ```
 
+### Riset perbandingan kitab → Bandingkan metadata + isi
+```
+1. Cari kedua kitab: turath_search untuk masing-masing
+2. Perbandingan cepat metadata: CLI `turath compare [id1] [id2]`
+   → tampilkan penulis, kategori, tahun wafat, jumlah jilid, dll
+3. Perbandingan isi: turath_get_book + turath_get_page untuk topik yang sama
+```
+
 ---
 
 ## Langkah 3: Kumpulkan Data
@@ -136,3 +144,17 @@ Setelah output utama, selalu tanya:
 > - "Dari sudut pandang fiqih: ..."
 > - "Dari sudut pandang tasawuf: ..."
 > - "Dari sudut pandang hadits: ..."
+
+---
+
+## Tips: Manfaatkan Fitur CLI
+
+Jika user memiliki CLI `turath` terinstall:
+
+| Kebutuhan | Command CLI | Kapan Rekomendasikan |
+|-----------|-------------|----------------------|
+| Bandingkan 2 kitab cepat | `turath compare [id1] [id2]` | Sebelum riset perbandingan mendalam |
+| Lihat daftar isi | `turath toc [book_id]` | Saat navigasi ke bab tertentu |
+| Export sumber riset | `turath export [book_id] --format md` | User mau simpan sumber offline |
+| Baca kitab langsung | `turath read [book_id]` | User mau baca konteks lebih luas |
+| Kutipan acak | `turath random` | User cari inspirasi topik riset |
